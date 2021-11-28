@@ -1,50 +1,60 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import MovieContainer from './components/MovieContainer';
-import ImageList from '@mui/material/ImageList';
-import ImageListItem from '@mui/material/ImageListItem';
-import ImageListItemBar from '@mui/material/ImageListItemBar';
-import { TextField } from '@mui/material';
-import { Typography } from '@mui/material';
+import { TextField, Typography } from '@mui/material';
 import { secret } from './config'
+import {
+  SearchDiv,
+  RatingsDiv,
+  PageWrapper,
+  Card,
+  CardImage,
+  CardTitle,
+  CardRating,
+} from './components/styles';
 
 
+export const url: string = `https://api.themoviedb.org/3/discover/movie?api_key=${secret.apiKey}&language=en-US&include_rating=true&include_adult=true&include_video=false&page=1&primary_release_date.gte=1990-01-01&primary_release_date.lte=1999-12-31&vote_average.gte=6&with_genres=35`;
 
+export const imageUrl: string = 'https://image.tmdb.org/t/p/original';
 
-
-const url: string = `https://api.themoviedb.org/3/discover/movie?api_key=${secret.apiKey}&language=en-US&include_rating=true&include_adult=true&include_video=false&page=1&primary_release_date.gte=1990-01-01&primary_release_date.lte=1999-12-31&vote_average.gte=6&with_genres=35`;
-
-const imageUrl: string = 'https://image.tmdb.org/t/p/original';
-type Movie = {
+export type Movie = {
   id: number;
   backdrop_path: string;
   title: string;
   vote_average: number;
   poster_path: string;
 };
+
 function App() {
   const [movieContent, setMovieContent] = useState([]);
   const [filteredMovies, setFilteredMovies] = useState([]);
   const [values, setValues] = useState({
     title: '',
-    ratings: null,
+    ratings: 0,
   });
 
+
+
   useEffect(() => {
-    axios
-      .get(url)
-      .then((res) => {
-        console.log(res.data.results);
-        setMovieContent(res.data.results);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
+    let mounted = true;
+    const getMovieData = async () => {
+      const {data} = await axios.get(url);
+      if (mounted) {
+        setMovieContent(data.results);
+      }
+    };
+    getMovieData();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useEffect(() => {
     setFilteredMovies(movieContent);
   }, [movieContent]);
+    
 
   const handleSearch =
     (name: string) => (event: { target: { value: string } }) => {
@@ -68,8 +78,8 @@ function App() {
         const ratings = event.target.value;
         if (ratings !== 0 || null) {
           let filteredData = movieContent.filter((mov: any) => {
-            // 
             return mov.vote_average >= ratings
+            // return mov.vote_average == ratings;
           });
           setFilteredMovies(filteredData);
         } else setFilteredMovies(movieContent);
@@ -78,55 +88,49 @@ function App() {
    
 
   return (
-    <MovieContainer>
-      <div>
-        <Typography variant='h2'>Comedy Movies</Typography>
-      </div>
-      <ImageList sx={{ width: '100%', height: 450 }}>
-        {filteredMovies.map((item: Movie) => (
-          <ImageListItem key={item.id}>
-            <img
-              src={`${imageUrl}${
-                item.backdrop_path ? item.backdrop_path : item.poster_path
-              }`}
-              srcSet={`${imageUrl}${
-                item.backdrop_path ? item.backdrop_path : item.poster_path
-              }`}
-              alt={item.title}
-              loading='lazy'
-            />
-            <ImageListItemBar
-              title={item.title}
-              subtitle={<span>Average Vote: {item.vote_average}</span>}
-              position='below'
-            />
-          </ImageListItem>
-        ))}
-      </ImageList>
-      <div>
-        <Typography variant='h6'>Search by movie title</Typography>
-        <TextField
-          size='small'
-          placeholder='Search'
-          variant='outlined'
-          name='title'
-          onChange={handleSearch('title')}
-          value={values.title}
-        />
-      </div>
-      <div>
-        <Typography variant='h6'>Search by average vote</Typography>
+    <MovieContainer data-testid='resolved'>
+      <SearchDiv>
+        <div>
+          <Typography variant='h6'>Search by movie title</Typography>
+          <TextField
+            size='small'
+            placeholder='Search'
+            variant='outlined'
+            name='title'
+            onChange={handleSearch('title')}
+            value={values.title}
+          />
+        </div>
+        <RatingsDiv>
+          <Typography variant='h6'>Search by average vote</Typography>
 
-        <TextField
-          size='small'
-          type='number'
-          placeholder='Rating'
-          variant='outlined'
-          name='rating'
-          onChange={handleRating('ratings')}
-          value={values.ratings}
-        />
-      </div>
+          <TextField
+            size='small'
+            type='number'
+            placeholder='Rating'
+            variant='outlined'
+            name='rating'
+            onChange={handleRating('ratings')}
+            value={values.ratings}
+          />
+        </RatingsDiv>
+      </SearchDiv>
+      <PageWrapper data-testid='filmDiv'>
+        {filteredMovies.length === 0 && (<div>loading movies....</div>)}
+        {filteredMovies.map((mov: any, id: number) => (
+          
+          <Card key={id} data-testid={`filmDataItem-${id}`}>
+            <CardImage
+              src={`${imageUrl}${
+                mov.backdrop_path ? mov.backdrop_path : mov.poster_path
+              }`}
+              alt={mov.title}
+            />
+            <CardTitle>{mov.title}</CardTitle>
+            <CardRating>{mov.vote_average}</CardRating>
+          </Card>
+        ))}
+      </PageWrapper>
     </MovieContainer>
   );
 }

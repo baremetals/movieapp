@@ -116,16 +116,15 @@ function App() {
         </RatingsDiv>
       </SearchDiv>
       <PageWrapper data-testid='filmDiv'>
-        {filteredMovies.length === 0 && (<div>loading movies....</div>)}
-        {filteredMovies.map((mov: any, id: number) => (
-          
+        {filteredMovies.length === 0 && <div>loading movies....</div>}
+        {filteredMovies.map((mov: Movie, id: number) => (
           <Card key={id} data-testid={`filmDataItem-${id}`}>
             <CardImage
               src={`${imageUrl}${
                 mov.backdrop_path ? mov.backdrop_path : mov.poster_path
               }`}
               alt={mov.title}
-            />
+            />``
             <CardTitle>{mov.title}</CardTitle>
             <CardRating>{mov.vote_average}</CardRating>
           </Card>
